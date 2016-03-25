@@ -367,8 +367,6 @@
 	var init = function(){
 		$(document).ready(function(){			
 			SetController();
-
-			console.log("test");
 		});
 	}();
 
