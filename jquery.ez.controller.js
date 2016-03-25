@@ -368,7 +368,7 @@
 		$(document).ready(function(){			
 			SetController();
 
-			alert(1);
+			alert(2);
 		});
 	}();
 
