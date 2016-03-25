@@ -356,7 +356,7 @@
 							.css('border', '1px dashed red')
 							.append('<span class="controllerLabel">' + controllerName + '</span>')
 						    .find('.controllerLabel')
-								.css('display','inline-block');
+								.css('display','inline-block')
 								.css('position','relative').css('top',0)
 								.css('background','#000').css('color','#fff')
 								.css('margin-right','5px');
