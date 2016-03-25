@@ -1,5 +1,5 @@
 // 2016.03.25
-// jquery.ea.controller-0.3.0.js
+// jquery.ea.controller-0.3.1.js
 (function(window, document, undefined){
 	function Hashtable(){
 		this.items = new Array();
