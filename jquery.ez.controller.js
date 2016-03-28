@@ -1,5 +1,3 @@
-// 2016.03.25
-// jquery.ea.controller-0.3.1.js
 (function(window, document, undefined){
 	function Hashtable(){
 		this.items = new Array();
@@ -17,9 +15,9 @@
 		this.get = function(key){
 			if(this.containsKey(key)){
 				return this.items[key];
+			}else{
+				return null;
 			}
-			
-			return null;			
 		};
 
 		this.remove = function(key){
@@ -32,12 +30,12 @@
 		};
 
 		this.containsKey = function(key){
-			return typeof(this.items[key]) !== "undefined";
+			return typeof(this.items[key]) != "undefined";
 		};
 
 		this.containsValue = function containsValue(value){
 			for(var item in this.items){
-				if(this.items[item] === value){
+				if(this.items[item] == value){
 					return true;
 				}
 			}
@@ -50,7 +48,7 @@
 
 		this.clear = function(){
 			this.items = new Array();
-			this.itemsCount = 0;
+			itemsCount = 0;
 		};
 
 		this.size = function(){
@@ -60,16 +58,16 @@
 		this.isEmpty = function(){
 			return this.size() === 0;
 		};
-	}
+	};
 
 	// Recursion method
 	function GetSearchObject(obj, key){
 		var result = null;
 
 		if(typeof obj === 'object'){
-			for(var k in obj){
-				if(k !== '$obj'){
-					if(k === key){
+			for(k in obj){
+				if(k != '$obj'){
+					if(k == key){
 						return obj[k];
 					}
 
@@ -85,7 +83,7 @@
 		}
 
 		return result;
-	}
+	};
 
 	// set controller objects
 	function SetController(cn){
@@ -93,31 +91,31 @@
 			var $this = $(this)
 			  , conValue = $this.data('controller');
 
-			if(typeof conValue !== 'undefined' && conValue !== ''){
-				if(typeof cn === "undefined"){
+			if(typeof conValue != 'undefined' && conValue != ''){
+				if(typeof cn == "undefined"){
 					conValue = conValue.split(/\s+/);					
-					$.each(conValue, /* @callback */ function(index, value){
+					$.each(conValue, function(index, value){
 						controllerHashTable.add(value, $this);
 					});					
 					
 					//controllerHashTable.add(conValue, $this);
 				}else{
-					if(conValue === cn){				
+					if(conValue == cn){				
 						controllerHashTable.add(conValue, $this);
 					}
 				}
 			}
 		});
-	}
+	};
 
 	
 	function GetIds(parentTag, tagType){
 		var idvalue = "", arr = [];
 
-		for(var type in tagType){
-			parentTag.find(tagType[type]).each(/* @callback */ function(i, v){
+		for(type in tagType){
+			parentTag.find(tagType[type]).each(function(i, v){
 				idvalue = $(this).attr('id');
-				if(idvalue !== undefined && idvalue !== ""){
+				if(idvalue !== undefined && idvalue != ""){
 					arr.push(idvalue);
 				//}else{
 				//	alert(idvalue + '[id overrap!!]');
@@ -126,37 +124,40 @@
 		}
 
 		return arr;
-	}
+	};
 
 	function GetClass(parentTag, tagType){
 		var classvalue = "", arr = [];
 
-		for(var type in tagType){
-			parentTag.find(tagType[type]).each(/* @callback */ function(i, v){
+		for(type in tagType){
+			parentTag.find(tagType[type]).each(function(i, v){
 				classvalue = $(this).attr('class'); 
 				if(classvalue !== undefined){
 					classvalue = classvalue.split(/\s+/);					
-					$.each(classvalue, /* @callback */ function(index, value){
+					$.each(classvalue, function(index, value){
 						if($.inArray(value, arr) === -1){
-							arr.push(value);
+							if(value !== undefined && value != ""){
+								arr.push(value);								
+							}
 						}						
 					});
 				}
 			});
 		}
+		
 		return arr;
-	}
+	};
 
 	function ArrayToJson(array){
 		var jsonString = "{";
-		for(var arr in array){
+		for(arr in array){
 			jsonString = jsonString + '"' + array[arr] + '"' + ':' + '{}';
 			if(arr < array.length - 1) jsonString = jsonString + ',';
 		}
 		jsonString = jsonString + "}";
 
 		return $.parseJSON(jsonString);
-	}
+	};
 
 
 
@@ -190,11 +191,11 @@
 		var defaultTagObj = {
 			$obj : {},
 			isShow : true,
-			show : function(){
+			show : function(e){
 				this.isShow = true;
 				this.$obj.show();
 			},
-			hide : function(){
+			hide : function(e){
 				this.isShow = false;
 				this.$obj.val('').hide();
 			},
@@ -211,7 +212,7 @@
 		// get controller
 		controllerVal.obj = controllerHashTable.get(controllerName);
 		
-		if (controllerVal.obj === null)
+		if (controllerVal.obj == null)
 		{
 			//alert("controller null!!");			
 			this.exec = function(){
@@ -223,12 +224,12 @@
 		this.obj = controllerVal.obj;
 
 		// get alias
-		if(typeof controllerVal.obj.data('alias') !== 'undefined' && controllerVal.obj.data('alias') !== ''){
+		if(typeof controllerVal.obj.data('alias') != 'undefined' && controllerVal.obj.data('alias') != ''){
 			controllerVal.alias = controllerVal.obj.data('alias');
 		}
 
 		// get viewdata
-		if(typeof controllerVal.obj.data('viewdata') !== 'undefined' && controllerVal.obj.data('viewdata') !== ''){
+		if(typeof controllerVal.obj.data('viewdata') != 'undefined' && controllerVal.obj.data('viewdata') != ''){
 			controllerVal.viewdata = controllerVal.obj.data('viewdata');
 
 			$.ajax({
@@ -243,7 +244,7 @@
 
 		// get ids
 		arrId = GetIds(controllerVal.obj, ['form', 'input', 'div', 'p', 'span', 'textarea', 'ul', 'checkbox']);
-		//arrClass = GetClass(controllerVal.obj, ['input', 'div', 'p', 'span', 'textarea', 'checkbox']);
+		arrClass = GetClass(controllerVal.obj, ['input', 'div', 'p', 'span', 'textarea', 'checkbox']);
 
 		defaultObj.id = $.extend(true, {}, defaultObj.id, ArrayToJson(arrId));
 		defaultObj.className = $.extend(true, {}, defaultObj.className, ArrayToJson(arrClass));
@@ -253,16 +254,15 @@
 			this.model = $.extend(true, {}, this.model, defaultObj);
 
 			// model projection logic
-			var key;
 			for(key in this.model){
 				switch(key.toLowerCase()){
 					case 'id' :
 					case 'classname' :
-						targetChar = key === 'id' ? "#" : ".";
+						targetChar = key == 'id' ? "#" : ".";
  
 						modelVal.targetObj = this.model[key];
 
-						for(var target in modelVal.targetObj){
+						for(target in modelVal.targetObj){
 							modelVal.attrObj = modelVal.targetObj[target];
 
 							
@@ -272,23 +272,28 @@
 
 							eval('defaultObj.' + key + '.' + target + ' = modelVal.attrObj');
 
-							for(var attr in modelVal.attrObj){
+							for(attr in modelVal.attrObj){
 								if(attr === "event"){
 									modelVal.eventObj = modelVal.attrObj[attr];
 									
-									for(var e in modelVal.eventObj){
-										if(key === "classname" && e === "each"){
+									for(e in modelVal.eventObj){
+										if(key == "classname" && e == "each"){
 											if(typeof modelVal.eventObj[e] === "function"){
 												defaultTagObj.$obj.each(modelVal.eventObj[e]);
 											}
 										}else{
-											if(typeof modelVal.eventObj[e].func === "function"){
-												defaultTagObj.$obj.bind(e, {}, modelVal.eventObj[e].func);	
+											if(typeof modelVal.eventObj[e] === "function"){
+												defaultTagObj.$obj.bind(e, {}, modelVal.eventObj[e]);	
 											}
 											
-											if(modelVal.eventObj[e].trigger === "on"){                      	
-												defaultTagObj.$obj.trigger(e);
-											}                      								
+											modelVal.arrTrigger = modelVal.attrObj['trigger'];
+
+											if(typeof modelVal.arrTrigger != 'undefined' && modelVal.arrTrigger != ''){
+												this.test = modelVal.arrTrigger;
+												//for(trigger in modelVal.arrTrigger){
+												//	defaultTagObj.$obj.trigger(modelVal.arrTrigger[trigger]);
+												//}
+											}											
 										}
 									}
 								}
@@ -299,7 +304,7 @@
 						AliasTest(controllerVal, this.model[controllerVal.alias]);
 						break;
 				}
-			}
+			};
 
 			for(key in this.model){
 				switch(key.toLowerCase()){
@@ -310,19 +315,18 @@
 						break;
 					
 				}
-			}
+			};
 		};
 
 		// get define object by key name
 		this.get = function(key){
 			var rtn = GetSearchObject(defaultObj, key);
 			
-			if(rtn === null){
+			if(rtn == null){
 				return;
+			}else{
+				return rtn;
 			}
-			
-			return rtn;
-			
 		};
 
 		// get jquery object key name
@@ -341,16 +345,16 @@
 
 		function AliasTest(cv, vm){
 			var ts = "";
-			for(var v in vm){
+			for(v in vm){
 				ts = cv.alias + '.' + v;
 
-				cv.obj.html(/* @callback */ function(i, h){
+				cv.obj.html(function(i, h){
 					return h.replace(ts, vm[v]);
 				});
-			}
+			};
 		}
 
-		if(mode === "dev"){
+		if(mode == "dev"){
 			
 			controllerVal.obj.css('position', 'relative')
 							.css('border', '1px dashed red')
