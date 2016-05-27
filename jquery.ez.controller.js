@@ -1,6 +1,8 @@
 /*
-* version : 0.3.2
-*/
+ * version 0.3.0
+ * 추가된 기능
+ * - 개발모드 일때 폼 전송시 input 값의 내용을 쿠키에 저장하고 페이지를 새로 불러왔을 시 쿠키의 내용을 가져와 해당 input에 넣어준다. 
+ */
 (function(window, document, undefined){
 	function Hashtable(){
 		this.items = new Array();
@@ -51,7 +53,7 @@
 
 		this.clear = function(){
 			this.items = new Array();
-			itemsCount = 0;
+			this.itemsCount = 0;
 		};
 
 		this.size = function(){
@@ -131,11 +133,12 @@
 
 	function GetClass(parentTag, tagType){
 		var classvalue = "", arr = [];
-
+		var patten = /-/i;
+		
 		for(type in tagType){
 			parentTag.find(tagType[type]).each(function(i, v){
-				classvalue = $(this).attr('class'); 
-				if(classvalue !== undefined){
+				classvalue = $(this).attr('class');
+				if(classvalue !== undefined && !patten.test(classvalue)){
 					classvalue = classvalue.split(/\s+/);					
 					$.each(classvalue, function(index, value){
 						if($.inArray(value, arr) === -1){
@@ -147,10 +150,133 @@
 				}
 			});
 		}
-		
 		return arr;
 	};
 
+	function FormProjection(parentTag, tagType, mode){
+		var formTag = parentTag.find('form')
+		,	ht = new Hashtable()
+		,	array = new Array();
+		
+		var setData = function(fobj, tType){
+			var count = 0;
+			fobj.submit(function(){
+				ht.clear();
+				count = 0;
+				
+				for(type in tType){
+					
+					fobj.find(tType[type]).each(function(i){
+						nodeName = $(tType[type])[0].nodeName;
+						nodeType = $(this).attr('type');
+						array = [];
+						
+						switch (nodeName)
+						{
+							case "INPUT" :
+								if (nodeType == "text" || nodeType == "hidden"){
+									ht.add($(this).attr('name'), $(this).val());									
+								}else if(nodeType == "checkbox" || nodeType == "radio"){
+									if(ht.get($(this).attr('name')) == null){
+										array.push($(this).is(':checked'));
+										ht.add($(this).attr('name'), array);
+									}else{
+										array = ht.get($(this).attr('name'));										
+										array.push($(this).is(':checked'));
+										
+										ht.add($(this).attr('name'), array);
+									}
+								}
+								break;
+							case "SELECT" :
+								ht.add($(this).attr('name'), $(this).val());
+								break;
+							case "TEXTAREA" :								
+								ht.add($(this).attr('name'), $(this).val().replace(/\r?\n/g, '<br />'));
+								break;
+						}
+					});
+				}
+				
+				jsontest = "{";
+				for(var item in ht.items){
+					
+					if($.isArray(ht.items[item])){	// is array
+						jsontest = jsontest + '"' + item + '"' + ':' + '[' + ht.items[item] + ']';
+					}else{
+						jsontest = jsontest + '"' + item + '"' + ':' + '"' + ht.items[item] + '"';
+					}
+					
+					if(ht.size() - 1 > count){
+						jsontest = jsontest + ",";
+					}	
+					count = count + 1;
+				}
+				jsontest = jsontest + "}";
+				
+				$.cookie(fobj.attr('name'), jsontest);
+			});			
+		};
+		
+		var getData = function(fobj, tType){
+			var eventTrigger = function(obj, $obj){
+				events = $._data(obj, "events");
+				if(events !== undefined){
+					$.each(events, function(type){
+						$obj.trigger(type);
+					});
+				}
+			};
+			
+			if(!($.cookie(fobj.attr('name')) == null)){
+				var obj = ""
+				,	jsonformValue  = $.parseJSON($.cookie(fobj.attr('name')));
+
+				$.each(jsonformValue, function(name, val){
+					obj = $('[name='+name+']');
+					nodeName = obj[0].nodeName;
+					nodeType = obj.attr('type');
+					
+					switch(nodeName){
+						case "INPUT":
+							if(nodeType == "text" || nodeType == "hidden"){
+								obj.val(val);
+							}else if(nodeType == "checkbox" || nodeType == "radio"){
+								obj.each(function(index, item){
+									$(this).prop("checked", val[index]);
+									
+									if(val[index]){
+										eventTrigger(this, $(item));
+									}
+								});
+							}
+							break;
+						case "SELECT" :
+							obj.val(val).prop('selected', true);
+							eventTrigger(obj[0], obj);
+							break;				
+						case "TEXTAREA" :
+							obj.val(val.replace(/<br\s*[\/]?>/gi, "\n")); 
+							break;							
+					}
+				});
+			}
+		};
+		
+		var clearData = function(fobj){
+			$.cookie(fobj.attr('name'), null);
+		};
+	
+		formTag.each(function(){
+			if(mode == "dev"){
+				setData($(this), tagType);
+				getData($(this), tagType);
+			}else{
+				clearData($(this));
+			}
+		});
+	}
+	
 	function ArrayToJson(array){
 		var jsonString = "{";
 		for(arr in array){
@@ -246,12 +372,13 @@
 		}
 
 		// get ids
-		arrId = GetIds(controllerVal.obj, ['form', 'input', 'div', 'p', 'span', 'textarea', 'ul', 'checkbox']);
-		arrClass = GetClass(controllerVal.obj, ['input', 'div', 'p', 'span', 'textarea', 'checkbox']);
+		arrId = GetIds(controllerVal.obj, ['form', 'input', 'div', 'p', 'span', 'textarea', 'ul']);
+		arrClass = GetClass(controllerVal.obj, ['input', 'div', 'p', 'span', 'textarea']);
+ 
 
 		defaultObj.id = $.extend(true, {}, defaultObj.id, ArrayToJson(arrId));
-		defaultObj.className = $.extend(true, {}, defaultObj.className, ArrayToJson(arrClass));
-
+		defaultObj.classname = $.extend(true, {}, defaultObj.classname, ArrayToJson(arrClass));
+		
 		this.exec = function(){
 			// model extend
 			this.model = $.extend(true, {}, this.model, defaultObj);
@@ -268,7 +395,6 @@
 						for(target in modelVal.targetObj){
 							modelVal.attrObj = modelVal.targetObj[target];
 
-							
 							// add default attribute
 							defaultTagObj.$obj = controllerVal.obj.find(targetChar + target);
 							modelVal.attrObj = $.extend(true, {}, defaultTagObj, modelVal.attrObj);
@@ -278,20 +404,25 @@
 							for(attr in modelVal.attrObj){
 								if(attr === "event"){
 									modelVal.eventObj = modelVal.attrObj[attr];
-
+									
 									for(e in modelVal.eventObj){
 										if(key == "classname" && e == "each"){
 											if(typeof modelVal.eventObj[e] === "function"){
 												defaultTagObj.$obj.each(modelVal.eventObj[e]);
 											}
 										}else{
-											if(typeof modelVal.eventObj[e].func === "function"){
-												defaultTagObj.$obj.bind(e, {}, modelVal.eventObj[e].func);	
+											if(typeof modelVal.eventObj[e] === "function"){
+												defaultTagObj.$obj.bind(e, {}, modelVal.eventObj[e]);	
 											}
 											
-											if(modelVal.eventObj[e].trigger === "on"){                      	
-												defaultTagObj.$obj.trigger(e);
-											}  							
+											/*modelVal.arrTrigger = modelVal.attrObj['trigger'];
+
+											if(typeof modelVal.arrTrigger != 'undefined' && modelVal.arrTrigger != ''){
+												this.test = modelVal.arrTrigger;
+												//for(trigger in modelVal.arrTrigger){
+												//	defaultTagObj.$obj.trigger(modelVal.arrTrigger[trigger]);
+												//}
+											}	*/										
 										}
 									}
 								}
@@ -314,6 +445,9 @@
 					
 				}
 			};
+			
+			// form projection
+			FormProjection(controllerVal.obj, ['input', "select", "textarea"], mode);
 		};
 
 		// get define object by key name
@@ -353,7 +487,6 @@
 		}
 
 		if(mode == "dev"){
-			
 			controllerVal.obj.css('position', 'relative')
 							.css('border', '1px dashed red')
 							.append('<span class="controllerLabel">' + controllerName + '</span>')
@@ -362,8 +495,6 @@
 								.css('background','#000').css('color','#fff')
 								.css('margin-right','5px');
 		}
-
-
 	};
 
 	var init = function(){
